@@ -10,6 +10,7 @@ jobs:
 
     env:
       INFERENCE_BACKEND: mock
+      PYTHONPATH: ${{ github.workspace }}
 
     steps:
       - name: Checkout

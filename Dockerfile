@@ -12,7 +12,6 @@ COPY requirements-api.txt .
 RUN pip install --no-cache-dir -r requirements-api.txt
 
 COPY app ./app
-COPY outputs/qwen3-dpo ./outputs/qwen3-dpo
 
 EXPOSE 8000
 
