@@ -1,0 +1,15 @@
+.git
+.github
+.venv
+projet14
+projet14_311
+notebooks
+data
+outputs/qwen3-sft-run-test
+outputs/qwen3-sft-3epochs
+outputs/content
+qwen3-dpo.zip
+__pycache__
+*.pyc
+*.ipynb_checkpoints
+logs
