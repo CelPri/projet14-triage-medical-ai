@@ -10,6 +10,10 @@ ENV MODEL_VERSION=qwen3-dpo-merged-v1
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
+# vLLM est utile seulement quand le conteneur tourne sur la VM GPU.
+# En mode mock, il n'est pas utilise.
+RUN pip install --no-cache-dir vllm==0.6.6.post1
+
 COPY app ./app
 
 EXPOSE 8000

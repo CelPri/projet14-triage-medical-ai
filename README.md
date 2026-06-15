@@ -113,6 +113,9 @@ Endpoints :
 
 ## Docker
 
+Une seule image Docker est utilisee pour le projet.
+Elle peut tourner en mode `mock` pour les tests ou en mode `vllm` sur une VM GPU.
+
 ```powershell
 docker build -t projet14-triage-api .
 docker run --rm -p 8000:8000 -v "${PWD}\logs:/app/logs" projet14-triage-api
@@ -138,7 +141,8 @@ Sur ce serveur, vLLM doit etre installe separement :
 pip install vllm==0.6.6.post1
 ```
 
-La CI GitHub Actions reste en mode `mock`, car elle ne dispose pas de GPU pour charger le modele avec vLLM.
+Les tests GitHub Actions restent en mode `mock`, car l'environnement CI ne dispose pas de GPU.
+L'image Docker contient vLLM et peut etre lancee en mode `vllm` sur une VM GPU.
 
 ## CI/CD
 
@@ -154,10 +158,13 @@ Installation des dependances
 Tests API en mode mock
    |
    v
-Build de l'image Docker
+Build et push de l'image Docker vers GHCR
+   |
+   v
+Deploiement SSH optionnel vers une VM GPU
 ```
 
-Le deploiement pilote reel doit etre lance sur une machine GPU avec Docker, NVIDIA runtime et vLLM.
+Le deploiement pilote reel doit etre lance sur une machine GPU avec Docker et NVIDIA runtime.
 
 ## Tracabilite
 
