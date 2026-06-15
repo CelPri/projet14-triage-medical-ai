@@ -62,7 +62,7 @@ jobs:
           context: .
           file: Dockerfile
           push: true
-          tags: ghcr.io/${{ github.repository_owner }}/projet14-triage-api:main
+          tags: ghcr.io/celpri/projet14-triage-api:main
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -91,7 +91,7 @@ jobs:
           context: .
           file: Dockerfile.vllm
           push: true
-          tags: ghcr.io/${{ github.repository_owner }}/projet14-triage-api:vllm
+          tags: ghcr.io/celpri/projet14-triage-api:vllm
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -114,7 +114,7 @@ jobs:
             mkdir -p ~/models
             mkdir -p ~/logs/projet14
 
-            docker pull ghcr.io/${{ github.repository_owner }}/projet14-triage-api:vllm
+            docker pull ghcr.io/celpri/projet14-triage-api:vllm
 
             docker stop projet14-triage-api || true
             docker rm projet14-triage-api || true
@@ -128,5 +128,4 @@ jobs:
               -e INFERENCE_BACKEND=vllm \
               -e MODEL_PATH=/app/models/qwen3-dpo-merged \
               -e MODEL_VERSION=qwen3-dpo-merged-v1 \
-              ghcr.io/${{ github.repository_owner }}/projet14-triage-api:vllm
-
+              ghcr.io/celpri/projet14-triage-api:vllm
