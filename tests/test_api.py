@@ -23,13 +23,12 @@ def test_metadata_endpoint():
     assert response.status_code == 200
 
     data = response.json()
-    assert data["model_base"]
-    assert data["adapter_path"]
-    assert data["training_method"] == "SFT LoRA + DPO"
+    assert data["model_path"]
+    assert data["training_method"] == "SFT LoRA + DPO + merge"
 
 
 def test_triage_endpoint_mock():
-    # Le mode mock permet de tester l'API sans charger le modèle complet.
+    # Le mode mock permet de tester l'API sans charger le modele complet.
     payload = {
         "patient_text": "Patient de 62 ans avec douleur thoracique brutale, essoufflement et sueurs.",
         "max_tokens": 128,

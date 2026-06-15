@@ -1,0 +1,205 @@
+# Projet 14 - Assistant de triage medical
+
+Ce projet adapte le modele `Qwen/Qwen3-1.7B-Base` pour un cas d'usage de triage medical.
+
+Le travail couvre :
+
+- preparation des datasets SFT et DPO ;
+- fine-tuning supervise avec LoRA ;
+- alignement par preferences avec DPO ;
+- suivi des metriques avec logs, checkpoints et MLflow ;
+- API FastAPI ;
+- conteneur Docker ;
+- pipeline GitHub Actions ;
+- preparation du deploiement avec vLLM.
+
+## Installation
+
+Creer ou activer l'environnement Python, puis installer les dependances :
+
+```powershell
+python -m pip install -r requirements.txt
+```
+
+## Donnees et entrainement
+
+Les donnees finales sont dans `data/`.
+
+Les notebooks principaux sont :
+
+- `notebooks/dataset_building/build_datasets.ipynb` : construction des datasets SFT et DPO ;
+- `notebooks/training/01_sft_lora_test_pipeline.ipynb` : test court du pipeline SFT ;
+- `notebooks/training/02_sft_lora_full_run.ipynb` : entrainement SFT complet ;
+- `notebooks/training/03_sft_test_evaluation.ipynb` : evaluation des checkpoints SFT ;
+- `notebooks/training/04_dpo_training.ipynb` : entrainement DPO.
+
+## Resultats principaux
+
+SFT LoRA :
+
+- epoch 1 : train loss 2.162260, validation loss 2.248884 ;
+- epoch 2 : train loss 1.909145, validation loss 2.204758 ;
+- epoch 3 : train loss 1.671062, validation loss 2.202288 ;
+- meilleur checkpoint retenu : `outputs/qwen3-sft-3epochs/checkpoint-4762` ;
+- test loss du checkpoint retenu : 2.236565.
+
+DPO :
+
+- train loss : 0.578294 ;
+- validation loss : 0.531719 ;
+- validation reward accuracy : 0.81 ;
+- validation reward margin : 1.695979 ;
+- adapter final : `outputs/qwen3-dpo`.
+
+## MLflow
+
+Les metriques SFT et DPO peuvent etre enregistrees dans MLflow sans relancer l'entrainement :
+
+```powershell
+python scripts/register_mlflow_runs.py
+python -m mlflow ui --backend-store-uri .\mlruns
+```
+
+Interface locale :
+
+```text
+http://127.0.0.1:5000
+```
+
+## Modele final merge
+
+Pendant l'entrainement, LoRA permet de limiter l'empreinte GPU.
+Pour simplifier le deploiement, l'adapter DPO est fusionne avec le modele Qwen de base.
+
+Commande :
+
+```powershell
+python scripts/merge_dpo_model.py
+```
+
+Sortie :
+
+```text
+outputs/qwen3-dpo-merged
+```
+
+Le modele de deploiement est donc :
+
+```text
+outputs/qwen3-dpo-merged
+```
+
+## API locale
+
+Par defaut, l'API demarre en mode `mock`.
+Ce mode sert a tester l'API sans charger le modele.
+
+```powershell
+$env:INFERENCE_BACKEND="mock"
+python -m uvicorn app.main:app --host 127.0.0.1 --port 8000
+```
+
+Documentation interactive :
+
+```text
+http://127.0.0.1:8000/docs
+```
+
+Endpoints :
+
+- `GET /health` : verification simple de l'API ;
+- `GET /metadata` : informations sur le modele et le backend ;
+- `POST /triage` : generation d'une reponse de triage.
+
+## Docker
+
+```powershell
+docker build -t projet14-triage-api .
+docker run --rm -p 8000:8000 -v "${PWD}\logs:/app/logs" projet14-triage-api
+```
+
+## vLLM
+
+Le mode `vllm` est prevu pour un serveur Linux avec GPU NVIDIA.
+Il charge directement le modele merge.
+
+Exemple de lancement sur serveur GPU :
+
+```powershell
+$env:INFERENCE_BACKEND="vllm"
+$env:MODEL_PATH="outputs/qwen3-dpo-merged"
+$env:MODEL_VERSION="qwen3-dpo-merged-v1"
+python -m uvicorn app.main:app --host 0.0.0.0 --port 8000
+```
+
+Sur ce serveur, vLLM doit etre installe separement :
+
+```bash
+pip install vllm==0.6.6.post1
+```
+
+La CI GitHub Actions reste en mode `mock`, car elle ne dispose pas de GPU pour charger le modele avec vLLM.
+
+## CI/CD
+
+Le pipeline GitHub Actions execute :
+
+```text
+Push GitHub
+   |
+   v
+Installation des dependances
+   |
+   v
+Tests API en mode mock
+   |
+   v
+Build de l'image Docker
+```
+
+Le deploiement pilote reel doit etre lance sur une machine GPU avec Docker, NVIDIA runtime et vLLM.
+
+## Tracabilite
+
+Chaque appel a `/triage` ecrit une ligne dans :
+
+```text
+logs/audit.jsonl
+```
+
+Les logs contiennent :
+
+- identifiant de requete ;
+- horodatage ;
+- endpoint appele ;
+- backend utilise ;
+- version du modele ;
+- latence ;
+- longueur de l'entree.
+
+Le texte medical complet n'est pas stocke dans les logs.
+
+## Limites
+
+Ce prototype ne remplace pas un professionnel de sante.
+
+Le modele :
+
+- ne doit pas poser de diagnostic definitif ;
+- ne doit pas prescrire de traitement medicamenteux ;
+- doit recommander une conduite prudente ;
+- doit orienter vers les urgences en cas de signes graves.
+
+## Checklist go / no-go
+
+Avant un deploiement pilote reel :
+
+- tests API reussis ;
+- image Docker construite ;
+- modele merge disponible ;
+- backend `vllm` teste sur GPU ;
+- latence mesuree ;
+- logs d'audit actifs ;
+- acces endpoint protege ;
+- limites d'usage documentees ;
+- controles de securite clinique valides.

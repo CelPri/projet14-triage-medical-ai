@@ -10,8 +10,7 @@ class HealthResponse(BaseModel):
 
 
 class MetadataResponse(BaseModel):
-    model_base: str
-    adapter_path: str
+    model_path: str
     model_version: str
     training_method: str
     backend: str

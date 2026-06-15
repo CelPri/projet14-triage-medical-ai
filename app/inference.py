@@ -1,25 +1,24 @@
 import os
 
 
-MODEL_BASE = os.getenv("MODEL_BASE", "Qwen/Qwen3-1.7B-Base")
-LORA_ADAPTER = os.getenv("LORA_ADAPTER", "outputs/qwen3-dpo")
-MODEL_VERSION = os.getenv("MODEL_VERSION", "qwen3-dpo-v1")
+MODEL_PATH = os.getenv("MODEL_PATH", "outputs/qwen3-dpo-merged")
+MODEL_VERSION = os.getenv("MODEL_VERSION", "qwen3-dpo-merged-v1")
 INFERENCE_BACKEND = os.getenv("INFERENCE_BACKEND", "mock")
 
 
 def build_triage_prompt(patient_text: str) -> str:
-    return f"""Tu es un assistant de triage médical.
-Tu ne poses pas de diagnostic définitif.
-Tu ne prescris pas de traitement médicamenteux.
-Tu aides uniquement à estimer le niveau d'urgence et à recommander une conduite prudente.
+    return f"""Tu es un assistant de triage medical.
+Tu ne poses pas de diagnostic definitif.
+Tu ne prescris pas de traitement medicamenteux.
+Tu aides uniquement a estimer le niveau d'urgence et a recommander une conduite prudente.
 
 Cas patient :
 {patient_text}
 
-Réponds en français avec ce format :
-Priorité :
+Reponds en francais avec ce format :
+Priorite :
 Raison :
-Conduite à tenir :
+Conduite a tenir :
 Limite :
 """
 
@@ -36,10 +35,8 @@ class InferenceEngine:
     def _load_vllm(self) -> None:
         from vllm import LLM
 
-        self.model = LLM(
-            model=MODEL_BASE,
-            enable_lora=True,
-        )
+        # En mode vLLM, on charge directement le modele merge.
+        self.model = LLM(model=MODEL_PATH)
 
     def generate_triage(
         self,
@@ -50,31 +47,26 @@ class InferenceEngine:
         prompt = build_triage_prompt(patient_text)
 
         if self.backend == "mock":
-            return self._mock_response(patient_text)
+            return self._mock_response()
 
         return self._vllm_generate(prompt, max_tokens, temperature)
 
-    def _mock_response(self, patient_text: str) -> str:
+    def _mock_response(self) -> str:
         return (
-            "Priorité : Démonstration.\n"
-            "Raison : Réponse générée en mode mock pour tester l'API sans charger le modèle.\n"
-            "Conduite à tenir : Utiliser le backend vLLM pour une inférence réelle.\n"
-            "Limite : Cette réponse ne correspond pas à une évaluation médicale réelle."
+            "Priorite : Demonstration.\n"
+            "Raison : Reponse generee en mode mock pour tester l'API sans charger le modele.\n"
+            "Conduite a tenir : Utiliser le backend vLLM pour une inference reelle.\n"
+            "Limite : Cette reponse ne correspond pas a une evaluation medicale reelle."
         )
 
     def _vllm_generate(self, prompt: str, max_tokens: int, temperature: float) -> str:
         from vllm import SamplingParams
-        from vllm.lora.request import LoRARequest
 
         sampling_params = SamplingParams(
             max_tokens=max_tokens,
             temperature=temperature,
         )
 
-        outputs = self.model.generate(
-            [prompt],
-            sampling_params,
-            lora_request=LoRARequest("qwen3-dpo", 1, LORA_ADAPTER),
-        )
+        outputs = self.model.generate([prompt], sampling_params)
 
         return outputs[0].outputs[0].text.strip()

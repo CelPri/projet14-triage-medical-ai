@@ -4,20 +4,14 @@ import uuid
 from fastapi import FastAPI
 
 from app.audit import utc_now, write_audit_log
-from app.inference import (
-    INFERENCE_BACKEND,
-    LORA_ADAPTER,
-    MODEL_BASE,
-    MODEL_VERSION,
-    InferenceEngine,
-)
+from app.inference import INFERENCE_BACKEND, MODEL_PATH, MODEL_VERSION, InferenceEngine
 from app.schemas import HealthResponse, MetadataResponse, TriageRequest, TriageResponse
 
 
 app = FastAPI(title="CHSA Triage AI API", version="0.1.0")
 
-# Le moteur est créé au démarrage de l'application.
-# En mode mock, aucun modèle lourd n'est chargé.
+# Le moteur est cree au demarrage de l'application.
+# En mode mock, aucun modele lourd n'est charge.
 engine = InferenceEngine()
 
 
@@ -33,12 +27,11 @@ def health() -> HealthResponse:
 @app.get("/metadata", response_model=MetadataResponse)
 def metadata() -> MetadataResponse:
     return MetadataResponse(
-        model_base=MODEL_BASE,
-        adapter_path=LORA_ADAPTER,
+        model_path=MODEL_PATH,
         model_version=MODEL_VERSION,
-        training_method="SFT LoRA + DPO",
+        training_method="SFT LoRA + DPO + merge",
         backend=INFERENCE_BACKEND,
-        limitation="POC académique : ne remplace pas un avis médical ou une décision clinique.",
+        limitation="POC academique : ne remplace pas un avis medical ou une decision clinique.",
     )
 
 
