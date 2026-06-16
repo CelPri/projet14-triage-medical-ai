@@ -87,16 +87,36 @@ jobs:
 
             docker pull ghcr.io/celpri/projet14-triage-api:main
 
+            docker start qwen-vllm || docker run -d \
+              --name qwen-vllm \
+              --gpus all \
+              -p 8000:8000 \
+              -v ~/outputs/qwen3-dpo-merged:/model \
+              vllm/vllm-openai:latest \
+              --model /model \
+              --served-model-name qwen3-dpo-merged \
+              --dtype auto \
+              --max-model-len 2048
+
+            for i in {1..60}; do
+              if curl -fs http://127.0.0.1:8000/v1/models; then
+                break
+              fi
+              sleep 5
+            done
+
             docker stop projet14-triage-api || true
             docker rm projet14-triage-api || true
 
             docker run -d \
               --name projet14-triage-api \
-              --gpus all \
-              -p 8000:8000 \
-              -v ~/models/qwen3-dpo-merged:/app/models/qwen3-dpo-merged \
+              --network host \
               -v ~/logs/projet14:/app/logs \
               -e INFERENCE_BACKEND=vllm \
-              -e MODEL_PATH=/app/models/qwen3-dpo-merged \
               -e MODEL_VERSION=qwen3-dpo-merged-v1 \
+              -e VLLM_BASE_URL=http://127.0.0.1:8000 \
+              -e VLLM_MODEL_NAME=qwen3-dpo-merged \
               ghcr.io/celpri/projet14-triage-api:main
+
+            sleep 5
+            curl -f http://127.0.0.1:8080/health

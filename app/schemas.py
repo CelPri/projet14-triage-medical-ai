@@ -14,6 +14,8 @@ class MetadataResponse(BaseModel):
     model_version: str
     training_method: str
     backend: str
+    vllm_base_url: str
+    vllm_model_name: str
     limitation: str
 
 

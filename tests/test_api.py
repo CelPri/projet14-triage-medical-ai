@@ -17,6 +17,14 @@ def test_health_endpoint():
     assert "model_version" in data
 
 
+def test_demo_page():
+    response = client.get("/")
+
+    assert response.status_code == 200
+    assert "CHSA Triage AI" in response.text
+    assert "/triage" in response.text
+
+
 def test_metadata_endpoint():
     response = client.get("/metadata")
 
@@ -25,6 +33,8 @@ def test_metadata_endpoint():
     data = response.json()
     assert data["model_path"]
     assert data["training_method"] == "SFT LoRA + DPO + merge"
+    assert data["vllm_base_url"]
+    assert data["vllm_model_name"]
 
 
 def test_triage_endpoint_mock():
@@ -46,3 +56,12 @@ def test_triage_endpoint_mock():
     assert data["backend"] == "mock"
     assert data["model_version"]
     assert data["timestamp"]
+
+
+def test_audit_endpoint():
+    response = client.get("/audit")
+
+    assert response.status_code == 200
+    data = response.json()
+    assert "count" in data
+    assert "events" in data

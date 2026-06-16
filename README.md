@@ -107,9 +107,11 @@ http://127.0.0.1:8000/docs
 
 Endpoints :
 
+- `GET /` : interface web minimale de demonstration ;
 - `GET /health` : verification simple de l'API ;
 - `GET /metadata` : informations sur le modele et le backend ;
 - `POST /triage` : generation d'une reponse de triage.
+- `GET /audit` : dernieres traces d'interaction sans texte patient complet.
 
 ## Docker
 
@@ -118,31 +120,51 @@ Elle peut tourner en mode `mock` pour les tests ou en mode `vllm` sur une VM GPU
 
 ```powershell
 docker build -t projet14-triage-api .
-docker run --rm -p 8000:8000 -v "${PWD}\logs:/app/logs" projet14-triage-api
+docker run --rm -p 8080:8080 -v "${PWD}\logs:/app/logs" projet14-triage-api
 ```
 
 ## vLLM
 
-Le mode `vllm` est prevu pour un serveur Linux avec GPU NVIDIA.
-Il charge directement le modele merge.
+Le deploiement GPU utilise deux services :
 
-Exemple de lancement sur serveur GPU :
+- vLLM sert le modele merge via une API compatible OpenAI sur le port `8000` ;
+- FastAPI expose l'interface de demonstration et l'endpoint metier `/triage` sur le port `8080`.
 
-```powershell
-$env:INFERENCE_BACKEND="vllm"
-$env:MODEL_PATH="outputs/qwen3-dpo-merged"
-$env:MODEL_VERSION="qwen3-dpo-merged-v1"
-python -m uvicorn app.main:app --host 0.0.0.0 --port 8000
-```
-
-Sur ce serveur, vLLM doit etre installe separement :
+Lancement vLLM sur la VM GPU :
 
 ```bash
-pip install vllm==0.6.6.post1
+docker run -d --name qwen-vllm \
+  --gpus all \
+  -p 8000:8000 \
+  -v ~/outputs/qwen3-dpo-merged:/model \
+  vllm/vllm-openai:latest \
+  --model /model \
+  --served-model-name qwen3-dpo-merged \
+  --dtype auto \
+  --max-model-len 2048
+```
+
+Test direct de vLLM :
+
+```bash
+curl http://localhost:8000/v1/models
+```
+
+Lancement FastAPI contre vLLM :
+
+```bash
+docker build -t projet14-triage-api .
+docker run -d --name triage-api \
+  --network host \
+  -e INFERENCE_BACKEND=vllm \
+  -e VLLM_BASE_URL=http://127.0.0.1:8000 \
+  -e VLLM_MODEL_NAME=qwen3-dpo-merged \
+  -v ~/logs:/app/logs \
+  projet14-triage-api
 ```
 
 Les tests GitHub Actions restent en mode `mock`, car l'environnement CI ne dispose pas de GPU.
-L'image Docker contient vLLM et peut etre lancee en mode `vllm` sur une VM GPU.
+L'image Docker FastAPI n'inclut pas vLLM : elle appelle le serveur vLLM par HTTP.
 
 ## CI/CD
 

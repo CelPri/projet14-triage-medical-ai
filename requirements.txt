@@ -5,8 +5,5 @@ pytest==8.3.4
 httpx==0.28.1
 mlflow==2.19.0
 
-# vLLM est utilisé seulement sur le serveur GPU de déploiement.
-# Il n'est pas installé dans la CI ni sur Windows.
-# Commande prévue sur serveur Linux GPU :
-# pip install vllm==0.6.6.post1
-
+# vLLM tourne separement sur la VM GPU avec l'image Docker officielle
+# vllm/vllm-openai. Cette API FastAPI l'appelle en HTTP.
