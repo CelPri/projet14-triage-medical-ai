@@ -140,6 +140,11 @@ def clean_triage_response(text: str) -> str:
         fields["Conduite a tenir"] = "Appeler le 15 ou le 112 sans attendre."
         fields["Limite"] = "Evaluation immediate par un professionnel de sante."
 
+    noisy_terms = ("ontvangst", "intialized", "initialized")
+    for field, value in fields.items():
+        if any(term in value.lower() for term in noisy_terms):
+            fields[field] = ""
+
     fallback = {
         "Priorite": "A evaluer",
         "Raison": "Signes cliniques a analyser avec prudence.",
