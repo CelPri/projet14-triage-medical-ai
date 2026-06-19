@@ -33,6 +33,17 @@ Les notebooks principaux sont :
 - `notebooks/training/03_sft_test_evaluation.ipynb` : evaluation des checkpoints SFT ;
 - `notebooks/training/04_dpo_training.ipynb` : entrainement DPO.
 
+## Dataset versionne
+
+Le dataset final est aussi versionne au format JSONL dans un depot Hugging Face :
+
+[PCelia/projet14-medical-triage-dataset](https://huggingface.co/datasets/PCelia/projet14-medical-triage-dataset)
+
+Le depot contient les splits SFT, les splits DPO et le jeu d'evaluation de securite clinique.
+Sa dataset card documente les schemas, les langues, les transformations, les sources et les limites d'usage.
+
+Le depot est prive afin de respecter les conditions de redistribution des datasets sources.
+
 ## Resultats principaux
 
 SFT LoRA :
